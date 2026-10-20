@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { googleCalendarUrl } from "@/lib/eventCalendar";
 import { HACKATHON_EVENT_ID } from "@/lib/hackathon";
+import { isUpcomingEvent } from "@/lib/eventStatus";
 
 type Event = {
   id: string;
@@ -191,6 +192,24 @@ export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const refreshTime = () => setNow(Date.now());
+    const nextBoundary = events
+      .map(event => Date.parse(event.checkinClosesAt || event.checkinOpensAt || ""))
+      .filter(time => Number.isFinite(time) && time > now)
+      .sort((a, b) => a - b)[0];
+    const timer = nextBoundary === undefined ? undefined : setTimeout(
+      refreshTime,
+      Math.min(Math.max(nextBoundary - Date.now(), 1), 2_147_483_647),
+    );
+    window.addEventListener("focus", refreshTime);
+    return () => {
+      if (timer !== undefined) clearTimeout(timer);
+      window.removeEventListener("focus", refreshTime);
+    };
+  }, [events, now]);
 
   useEffect(() => {
     const load = async () => {
@@ -224,13 +243,7 @@ export default function EventsPage() {
       .filter((ev) => ev.dateKey);
   }, [events]);
 
-  const today = new Date();
-
-  const upcoming = enriched.filter((ev) => {
-    const close = ev.checkinClosesAt ? new Date(ev.checkinClosesAt) : null;
-    const open = ev.checkinOpensAt ? new Date(ev.checkinOpensAt) : null;
-    return close ? close > today : Boolean(open && open >= today);
-  });
+  const upcoming = enriched.filter(event => isUpcomingEvent(event, now));
 
   const sortedUpcoming = [...upcoming].sort((a, b) => {
     const aTime = a.checkinOpensAt ? new Date(a.checkinOpensAt).getTime() : 0;
@@ -247,7 +260,7 @@ export default function EventsPage() {
   const displayEvents = sortedUpcoming;
   const pastEvents = fallbackSorted.filter(event => !upcoming.includes(event)).reverse();
   const nextEvent = sortedUpcoming[0] ?? null;
-  const calendarEvents: CalendarEvent[] = (sortedUpcoming.length ? sortedUpcoming : fallbackSorted)
+  const calendarEvents: CalendarEvent[] = sortedUpcoming
     .filter((ev) => Boolean(ev.dateKey))
     .map((ev) => ({
       ...ev,
@@ -306,7 +319,7 @@ export default function EventsPage() {
           </div>
         </div>
 
-        {!loading && !error && events.some(event => event.id === HACKATHON_EVENT_ID) ? (
+        {!loading && !error && upcoming.some(event => event.id === HACKATHON_EVENT_ID) ? (
           <article className="rounded-3xl border border-blue-400/40 bg-gradient-to-r from-blue-600/20 to-transparent p-8 space-y-4">
             <p className="text-xs uppercase tracking-[0.2em] text-blue-300">October 2-4, 2026 / The Basement</p>
             <h3 className="text-3xl font-bold">HealthLink Hackathon</h3>

@@ -14,14 +14,14 @@ export default function Footer() {
           </div>
 
           <h3 className="text-xl font-semibold text-white mb-3">Contact Us</h3>
-          <p className="text-neutral-300">healthlink@ucsd.edu</p>
+          <p className="text-neutral-300">healthlinkatucsd@gmail.com</p>
         </div>
 
         {/* COMPANY */}
         <div>
           <h3 className="text-xl font-semibold text-white mb-3">Company</h3>
           <ul className="space-y-2 text-neutral-300">
-            <li>healthlink@ucsd.edu</li>
+            <li>healthlinkatucsd@gmail.com</li>
           </ul>
         </div>
 
