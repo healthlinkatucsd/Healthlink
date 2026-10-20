@@ -17,6 +17,14 @@ type Event = {
 
 const PACIFIC_TZ = "America/Los_Angeles";
 
+function EventDescription({ text }: { text: string | null }) {
+  return <>{(text || "Details coming soon.").split(/(https?:\/\/[^\s<>]+)/g).map((part, index) => {
+    if (!/^https?:\/\//.test(part)) return part;
+    const url = part.replace(/[.,;!?)]+$/, "");
+    return <span key={index}><a href={url} target="_blank" rel="noopener noreferrer" className="break-words font-semibold text-blue-200 underline underline-offset-4 hover:text-blue-100">{url}</a>{part.slice(url.length)}</span>;
+  })}</>;
+}
+
 const formatDateLabel = (dateString: string) =>
   new Intl.DateTimeFormat("en-US", {
     month: "short",
@@ -373,7 +381,7 @@ export default function EventsPage() {
                       {event.timeLabel || "TBD"}
                     </span>
                   </div>
-                  <p className="text-neutral-200">{event.description || "Details coming soon."}</p>
+                  <p className="text-neutral-200"><EventDescription text={event.description} /></p>
                   <div className="flex items-center justify-between text-sm text-neutral-300">
                     <span>{event.location || "Location TBA"}</span>
                   </div>
@@ -402,7 +410,7 @@ export default function EventsPage() {
                 <p className="text-xs uppercase tracking-[0.25em] text-blue-200">Past event</p>
                 <h3 className="text-2xl font-bold">{event.title}</h3>
                 <p className="text-blue-100">{event.startDate ? formatDateLabel(event.startDate.toISOString()) : event.dateKey}{event.timeLabel ? ` • ${event.timeLabel} PT` : ""}</p>
-                <p className="text-neutral-200">{event.description || "Details coming soon."}</p>
+                <p className="text-neutral-200"><EventDescription text={event.description} /></p>
                 <p className="text-sm text-neutral-300">{event.location || "Location TBA"}</p>
                 <Link href={`/checkin?event=${encodeURIComponent(event.id)}`} className="text-blue-200 underline">View event</Link>
               </article>
